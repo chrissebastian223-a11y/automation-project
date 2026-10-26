@@ -1,0 +1,4 @@
+ultralytics>=8.3
+# Install CUDA-enabled PyTorch separately from https://pytorch.org/get-started/locally/
+# Optional OCR:
+easyocr>=1.7

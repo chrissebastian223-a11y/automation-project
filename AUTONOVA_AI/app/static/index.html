@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AUTONOVA AI | Vehicle Control Center</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><div class="logo">A</div><div><h1>AUTONOVA <span>AI</span></h1><small>Autonomous Vehicle Control Center</small></div></div>
+  <div class="top-status"><span id="appPill" class="pill gray">Starting…</span><span id="clock"></span></div>
+</header>
+<main>
+<section class="status-row">
+  <div class="status-card"><small>CAMERA</small><b id="cameraStatus">Stopped</b><span id="cameraMeta">No video</span></div>
+  <div class="status-card"><small>AI / GPU</small><b id="aiStatus">Not loaded</b><span id="gpuMeta">Checking device…</span></div>
+  <div class="status-card"><small>ESP8266</small><b id="espStatus">Not tested</b><span id="espMeta">Configure address below</span></div>
+  <div class="status-card"><small>LAST COMMAND</small><b id="lastCommand">STOP</b><span id="commandMeta">No command yet</span></div>
+</section>
+
+<section class="grid-main">
+  <article class="panel video-panel">
+    <div class="panel-head"><div><h2>Live Vision</h2><p>Latest-frame display · detections appear when AI is loaded</p></div><span id="videoPill" class="pill gray">Waiting for camera</span></div>
+    <div class="video-wrap"><img id="video" alt="Camera video preview"><div id="videoOverlay" class="video-overlay">Select a camera source, then click Start Camera.</div></div>
+    <div class="button-row"><button class="primary" id="startCamera">Start Camera</button><button class="secondary" id="stopCamera">Stop Camera</button><button class="secondary" id="loadAI">Load AI Model</button><button class="secondary" id="aiPreview">AI Preview</button></div>
+    <div class="metrics"><div><small>Camera FPS</small><b id="cameraFps">—</b></div><div><small>AI inference</small><b id="inferMs">—</b></div><div><small>AI FPS</small><b id="aiFps">—</b></div><div><small>AI device</small><b id="device">Not loaded</b></div></div>
+  </article>
+
+  <article class="panel controls-panel">
+    <div class="panel-head"><div><h2>Remote Control</h2><p>Hold a direction to move; release to STOP</p></div><span class="pill blue">Teacher Mode</span></div>
+    <div class="control-pad">
+      <div></div><button class="direction" data-command="FORWARD">▲<small>FORWARD</small></button><div></div>
+      <button class="direction" data-command="LEFT">◀<small>LEFT</small></button><button class="stop-btn" id="stopNow">■<small>STOP</small></button><button class="direction" data-command="RIGHT">▶<small>RIGHT</small></button>
+      <div></div><button class="direction" data-command="BACKWARD">▼<small>BACKWARD</small></button><div></div>
+    </div>
+    <div class="button-row"><button id="testESP" class="primary">Test ESP Connection</button><button id="emergency" class="danger">EMERGENCY STOP</button></div>
+    <div id="commandStatus" class="notice">Ready. Test ESP before movement.</div>
+    <div class="mode-box">
+      <h3>Autonomous Modes — select separately</h3>
+      <label class="toggle-line"><input type="checkbox" id="followToggle"> <b>Person Following Mode</b> — camera + YOLO AI</label>
+      <p class="hint">Tracks a visible person. Requires camera and AI model. Stops if the person is lost or uncertain.</p>
+      <label class="toggle-line"><input type="checkbox" id="obstacleToggle"> <b>Obstacle Avoidance Mode</b> — ultrasonic sensor</label>
+      <p class="hint">Requests forward motion; Arduino checks the HC-SR04 and stops/pivots when an obstacle is close. Camera/AI is not required.</p>
+    </div>
+    <p class="warning">Modes are mutually exclusive. Test with wheels raised first. One front sensor cannot see side/rear hazards. Keep a physical power cutoff ready; this is a hobby robot, not a safety-rated autonomous vehicle.</p>
+  </article>
+</section>
+
+<section class="grid-secondary">
+  <article class="panel">
+    <div class="panel-head"><div><h2>Setup & Configuration</h2><p>Settings stay local in this running session.</p></div></div>
+    <form id="settingsForm">
+      <label>ESP base URL <input id="espUrl" value="http://192.168.1.14" placeholder="http://192.168.1.14"></label>
+      <label>Camera source <input id="cameraSource" value="0" placeholder="0, 1, phone stream URL, or video file path"></label>
+      <label>YOLO model path <input id="modelPath" value="yolov8n.pt" placeholder="yolov8n.pt or models/model.pt"></label>
+      <label>Detection confidence <input id="confidence" type="number" min="0.1" max="0.95" step="0.05" value="0.4"></label>
+      <label class="toggle-line"><input id="ocrToggle" type="checkbox"> Enable OCR (optional dependency)</label>
+      <button class="primary" type="submit">Save Settings</button>
+    </form>
+    <p class="hint">Phone stream support depends on the app's URL format and network permissions. If college Wi-Fi blocks device-to-device access, try a laptop hotspot or USB webcam.</p>
+  </article>
+  <article class="panel">
+    <div class="panel-head"><div><h2>Vision Analysis</h2><p>AI detections from the latest frame</p></div><span class="pill gray" id="detectionPill">No detections yet</span></div>
+    <div class="analysis-list"><div><span>Person detected</span><b id="personDetected">Unknown</b></div><div><span>Objects / obstacles</span><b id="obstacles">—</b></div><div><span>Vision obstacle warning</span><b id="obstacleWarning">Unknown</b></div><div><span>OCR</span><b id="ocrStatus">Disabled</b></div></div>
+    <div class="button-row"><button id="runOCR" class="secondary">Read Room Number</button><button id="demoButton" class="secondary">Teacher Demo: Start</button></div>
+    <div id="demoStatus" class="notice">Demo mode idle.</div>
+  </article>
+</section>
+
+<section class="panel events-panel">
+  <div class="panel-head"><div><h2>System Events & Errors</h2><p>Connection, command, camera, AI and safety messages</p></div><button id="clearEvents" class="secondary small">Clear view</button></div>
+  <div id="events" class="events"><div class="event">Waiting for events…</div></div>
+</section>
+<footer>Local-first · Windows 11 · NVIDIA CUDA status is reported from the actual runtime · Physical safety switch required</footer>
+</main>
+<div id="toast" role="status"></div>
+<script src="/static/app.js"></script>
+</body></html>
